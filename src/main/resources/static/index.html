@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>🚚 GreenCart Logistics Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    background: linear-gradient(135deg, #f0f4f8 0%, #e0e6ed 100%);
+    font-family: 'Poppins', sans-serif;
+    color: #333;
+  }
+  .navbar {
+    background-color: #2c3e50 !important;
+    border-bottom: 3px solid #1abc9c;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .navbar-brand {
+    font-weight: 700;
+    font-size: 1.6rem;
+    color: #ecf0f1 !important;
+  }
+  .nav-link {
+    color: #ecf0f1 !important;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  .nav-link:hover {
+    color: #1abc9c !important;
+  }
+  .card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  .card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  }
+  .kpi-card {
+    text-align: center;
+    padding: 2rem 1rem;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUp 0.6s forwards;
+    background-color: #ffffff;
+  }
+  .kpi-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    color: #34495e;
+  }
+  .kpi-card h6 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #7f8c8d;
+  }
+  .fade-in {
+    opacity: 0;
+    animation: fadeIn 0.7s forwards;
+  }
+  .hidden { display: none; }
+
+  #loginView .card, #simulationView .card, .management-card {
+    background: #ffffff;
+  }
+  .form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #ced4da;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.3s ease;
+  }
+  .form-control:focus {
+    border-color: #1abc9c;
+    box-shadow: 0 0 0 0.2rem rgba(26, 188, 156, 0.25);
+  }
+  .btn-success {
+    background-color: #1abc9c;
+    border-color: #1abc9c;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  .btn-success:hover {
+    background-color: #16a085;
+    border-color: #16a085;
+    transform: translateY(-2px);
+  }
+  .btn-primary {
+    background-color: #3498db;
+    border-color: #3498db;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  .btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #2980b9;
+    transform: translateY(-2px);
+  }
+  .btn-outline-light {
+    color: #ecf0f1;
+    border-color: #ecf0f1;
+    transition: all 0.3s ease;
+  }
+  .btn-outline-light:hover {
+    background-color: #ecf0f1;
+    color: #2c3e50;
+  }
+  .dashboard-section {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    margin-top: 2rem;
+  }
+  .chart-container {
+    padding: 1.5rem;
+  }
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+  .chartjs-render-monitor canvas {
+    background-color: transparent !important;
+  }
+  .container {
+      max-width: 1200px;
+  }
+  @media (min-width: 992px) {
+    .dashboard-section.chart-container {
+      height: 450px;
+    }
+    .kpi-card {
+      height: 100%;
+    }
+  }
+  .management-nav .nav-link {
+    color: #34495e !important;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s ease;
+  }
+  .management-nav .nav-link.active {
+    background-color: #1abc9c;
+    color: #fff !important;
+    font-weight: 600;
+  }
+  .management-section {
+    padding: 2rem;
+  }
+  .table-responsive {
+    margin-top: 1.5rem;
+  }
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+  .btn-action {
+    margin: 0 0.2rem;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.6rem;
+  }
+</style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark px-3">
+  <div class="container-fluid">
+    <a class="navbar-brand" onclick="showView('dashboardView')">🚚 GreenCart</a>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="navbar-nav">
+        <a class="nav-link" onclick="showView('dashboardView')">Dashboard</a>
+        <a class="nav-link" onclick="showView('simulationView')">Simulation</a>
+        <a class="nav-link" onclick="showView('managementView')">Management</a>
+      </div>
+      <span class="navbar-text ms-auto me-3" id="welcomeMsg" style="color: #bdc3c7;"></span>
+      <button class="btn btn-outline-light" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5" id="loginView">
+  <div class="card p-4" style="max-width:400px;margin:auto;">
+    <h4 class="text-center mb-3">Manager Login</h4>
+    <input id="username" class="form-control mb-2" placeholder="Username">
+    <input id="password" type="password" class="form-control mb-3" placeholder="Password">
+    <button class="btn btn-success w-100" onclick="login()">Login</button>
+    <div id="loginMsg" class="text-danger mt-2 text-center"></div>
+  </div>
+</div>
+
+<div class="container mt-4 hidden" id="dashboardView">
+  <h3 class="mb-4 fw-bold">📊 Dashboard Overview</h3>
+  <div class="row g-4" id="kpiCards"></div>
+  <div class="row mt-5 g-4">
+    <div class="col-md-6">
+      <div class="card dashboard-section chart-container">
+        <h5 class="mb-3">Delivery Status</h5>
+        <canvas id="deliveryChart"></canvas>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card dashboard-section chart-container">
+        <h5 class="mb-3">Cost Breakdown</h5>
+        <canvas id="costChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container mt-5 hidden" id="simulationView">
+  <div class="card p-5">
+    <h3 class="mb-4 fw-bold">⚙ Run New Simulation</h3>
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label for="drivers" class="form-label">Available Drivers</label>
+        <input id="drivers" type="number" class="form-control" value="5">
+      </div>
+      <div class="col-md-3">
+        <label for="startTime" class="form-label">Start Time</label>
+        <input id="startTime" type="time" class="form-control" value="08:00">
+      </div>
+      <div class="col-md-3">
+        <label for="maxHours" class="form-label">Max Hours per Driver</label>
+        <input id="maxHours" type="number" class="form-control" value="8">
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-primary w-100" onclick="runSimulation()">Run Simulation ▶</button>
+      </div>
+    </div>
+    <div id="simOutput" class="mt-4"></div>
+  </div>
+</div>
+
+<div class="container mt-4 hidden" id="managementView">
+  <h3 class="mb-4 fw-bold">🗂️ Data Management</h3>
+  <div class="row">
+    <div class="col-md-3">
+      <div class="card management-card p-3">
+        <div class="nav flex-column management-nav" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+          <a class="nav-link active" id="drivers-tab" onclick="showManagement('drivers')">Drivers</a>
+          <a class="nav-link" id="routes-tab" onclick="showManagement('routes')">Routes</a>
+          <a class="nav-link" id="orders-tab" onclick="showManagement('orders')">Orders</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-9">
+      <div class="tab-content" id="v-pills-tabContent">
+        <div class="tab-pane fade show active management-section" id="driversView" role="tabpanel">
+          <div class="card management-card p-4">
+            <h4 class="mb-4">Drivers</h4>
+            <form id="driverForm" class="row g-3 mb-4">
+              <input type="hidden" id="driverId">
+              <div class="col-md-5">
+                <label for="driverName" class="form-label visually-hidden">Name</label>
+                <input type="text" class="form-control" id="driverName" placeholder="Name" required>
+              </div>
+              <div class="col-md-4">
+                <label for="driverCapacity" class="form-label visually-hidden">Capacity</label>
+                <input type="number" class="form-control" id="driverCapacity" placeholder="Capacity (kg)" required>
+              </div>
+              <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-success">Save Driver</button>
+              </div>
+            </form>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr><th>ID</th><th>Name</th><th>Capacity</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="driversTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade management-section" id="routesView" role="tabpanel">
+          <div class="card management-card p-4">
+            <h4 class="mb-4">Routes</h4>
+            <form id="routeForm" class="row g-3 mb-4">
+              <input type="hidden" id="routeId">
+              <div class="col-md-3">
+                <label for="routeOrigin" class="form-label visually-hidden">Origin</label>
+                <input type="text" class="form-control" id="routeOrigin" placeholder="Origin" required>
+              </div>
+              <div class="col-md-3">
+                <label for="routeDestination" class="form-label visually-hidden">Destination</label>
+                <input type="text" class="form-control" id="routeDestination" placeholder="Destination" required>
+              </div>
+              <div class="col-md-3">
+                <label for="routeDistance" class="form-label visually-hidden">Distance</label>
+                <input type="number" class="form-control" id="routeDistance" placeholder="Distance (km)" required>
+              </div>
+              <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-success">Save Route</button>
+              </div>
+            </form>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr><th>ID</th><th>Origin</th><th>Destination</th><th>Distance</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="routesTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade management-section" id="ordersView" role="tabpanel">
+          <div class="card management-card p-4">
+            <h4 class="mb-4">Orders</h4>
+            <form id="orderForm" class="row g-3 mb-4">
+              <input type="hidden" id="orderId">
+              <div class="col-md-3">
+                <label for="orderDestination" class="form-label visually-hidden">Destination</label>
+                <input type="text" class="form-control" id="orderDestination" placeholder="Destination" required>
+              </div>
+              <div class="col-md-3">
+                <label for="orderWeight" class="form-label visually-hidden">Weight</label>
+                <input type="number" class="form-control" id="orderWeight" placeholder="Weight (kg)" required>
+              </div>
+              <div class="col-md-3">
+                <label for="orderRevenue" class="form-label visually-hidden">Revenue</label>
+                <input type="number" class="form-control" id="orderRevenue" placeholder="Revenue (₹)" required>
+              </div>
+              <div class="col-md-3 d-grid">
+                <button type="submit" class="btn btn-success">Save Order</button>
+              </div>
+            </form>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr><th>ID</th><th>Destination</th><th>Weight</th><th>Revenue</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="ordersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://localhost:8000";
+let myDeliveryChart, myCostChart;
+let currentManagementView = 'drivers';
+
+// Navigation
+function showView(id) {
+  const views = ["dashboardView", "simulationView", "loginView", "managementView"];
+  views.forEach(v => document.getElementById(v).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  if (id === "dashboardView") loadDashboard();
+  if (id === "simulationView") runSimulation();
+  if (id === "managementView") {
+    // This line ensures that when you click "Management", it defaults to the drivers tab and loads data
+    showManagement('drivers');
+  }
+}
+
+// Sub-navigation for Management views
+function showManagement(view) {
+  currentManagementView = view;
+  document.querySelectorAll('#managementView .tab-pane').forEach(el => el.classList.remove('show', 'active'));
+  document.getElementById(view + 'View').classList.add('show', 'active');
+  document.querySelectorAll('.management-nav .nav-link').forEach(el => el.classList.remove('active'));
+  document.getElementById(view + '-tab').classList.add('active');
+  loadManagementData();
+}
+
+function saveToken(t, u) { localStorage.setItem("jwt", t); localStorage.setItem("username", u); }
+function getToken() { return localStorage.getItem("jwt"); }
+function logout() { localStorage.clear(); showView("loginView"); }
+
+// Auth
+async function login() {
+  let res = await fetch(API_BASE + "/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: username.value, password: password.value })
+  });
+  if (res.ok) {
+      let d = await res.json();
+      saveToken(d.token, username.value);
+      welcomeMsg.textContent = "Welcome, " + username.value;
+      showView("dashboardView");
+  } else {
+      loginMsg.textContent = "Invalid username or password";
+  }
+}
+async function fetchAuth(path, opt = {}) {
+  opt.headers = {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + getToken(),
+      ...opt.headers
+  };
+  return fetch(API_BASE + path, opt);
+}
+
+// Dashboard (same as before)
+async function loadDashboard() {
+  let r = await fetchAuth("/api/simulation/history");
+  if (!r.ok) {
+    if (r.status === 401) { logout(); return; }
+    kpiCards.innerHTML = "<p>Failed to load data.</p>";
+    return;
+  }
+  let history = await r.json();
+  if (!history.length) {
+    kpiCards.innerHTML = "<p>No simulations have been run yet.</p>";
+    return;
+  }
+  let last = history[history.length - 1];
+
+  const kpis = [
+      { label: "Total Profit", val: `₹${last.totalProfit}`, icon: '💰' },
+      { label: "Efficiency Score", val: `${last.efficiencyScore}%`, icon: '📈' },
+      { label: "On-Time Deliveries", val: last.onTimeDeliveries, icon: '⏱️' },
+      { label: "Total Orders", val: last.totalDeliveries, icon: '📦' }
+  ];
+  kpiCards.innerHTML = "";
+  kpis.forEach((kpi, i) => {
+    const cardHtml = `
+      <div class="col-md-3">
+        <div class="card kpi-card" style="animation-delay:${i * 0.1}s">
+          <h6>${kpi.label}</h6>
+          <div class="kpi-value">${kpi.icon} ${kpi.val}</div>
+        </div>
+      </div>`;
+    kpiCards.innerHTML += cardHtml;
+  });
+
+  const deliveryData = [last.onTimeDeliveries, last.totalDeliveries - last.onTimeDeliveries];
+  const costData = [last.totalFuelCost, last.totalBonuses, last.totalPenalties];
+  
+  if (myDeliveryChart) myDeliveryChart.destroy();
+  if (myCostChart) myCostChart.destroy();
+
+  myDeliveryChart = new Chart(deliveryChart, {
+      type: "pie",
+      data: {
+          labels: ["On Time", "Late"],
+          datasets: [{ data: deliveryData, backgroundColor: ["#1abc9c", "#e74c3c"] }]
+      },
+      options: {
+          responsive: true, maintainAspectRatio: false, animation: { animateScale: true, animateRotate: true },
+          plugins: { legend: { position: 'bottom' } }
+      }
+  });
+
+  myCostChart = new Chart(costChart, {
+      type: "bar",
+      data: {
+          labels: ["Fuel Cost", "Bonuses", "Penalties"],
+          datasets: [{ label: "₹ Amount", data: costData, backgroundColor: ["#f1c40f", "#2ecc71", "#e74c3c"] }]
+      },
+      options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 800, easing: 'easeOutBounce' },
+          scales: { y: { beginAtZero: true } }
+      }
+  });
+}
+
+// Simulation (same as before)
+async function runSimulation() {
+  let payload = {
+      availableDrivers: parseInt(drivers.value),
+      startTime: startTime.value,
+      maxHoursPerDriver: parseInt(maxHours.value)
+  };
+  let r = await fetchAuth("/api/simulate", { method: "POST", body: JSON.stringify(payload) });
+  if (!r.ok) {
+      let e = await r.json().catch(() => ({}));
+      alert(e.message || "Simulation failed");
+      return;
+  }
+  let d = await r.json();
+  simOutput.innerHTML = `<div class="card p-4 fade-in mt-3" style="border-left: 5px solid #1abc9c;">
+    <h5>✅ Simulation Complete!</h5>
+    <p class="mb-1"><b>Total Profit:</b> ₹${d.totalProfit}</p>
+    <p class="mb-1"><b>Efficiency Score:</b> ${d.efficiencyScore}%</p>
+    <p class="mb-1"><b>Total Fuel Cost:</b> ₹${d.totalFuelCost}</p>
+    <p class="mb-0 text-muted small">Dashboard has been updated with the new results.</p>
+  </div>`;
+  loadDashboard();
+}
+
+// --- Management Pages CRUD Logic ---
+async function loadManagementData() {
+  const endpoint = `/api/${currentManagementView}`;
+  const r = await fetchAuth(endpoint);
+  if (!r.ok) {
+    console.error("Failed to fetch data:", r.status);
+    return;
+  }
+  const data = await r.json();
+  renderTable(data);
+}
+
+function renderTable(data) {
+  const tableBody = document.getElementById(currentManagementView + 'TableBody');
+  tableBody.innerHTML = '';
+  data.forEach(item => {
+    const row = document.createElement('tr');
+    if (currentManagementView === 'drivers') {
+      row.innerHTML = `
+        <td>${item.id}</td>
+        <td>${item.name}</td>
+        <td>${item.capacity} kg</td>
+        <td>
+          <button class="btn btn-warning btn-sm btn-action" onclick="editItem(${item.id})">Edit</button>
+          <button class="btn btn-danger btn-sm btn-action" onclick="deleteItem(${item.id})">Delete</button>
+        </td>
+      `;
+    } else if (currentManagementView === 'routes') {
+      row.innerHTML = `
+        <td>${item.id}</td>
+        <td>${item.origin}</td>
+        <td>${item.destination}</td>
+        <td>${item.distance} km</td>
+        <td>
+          <button class="btn btn-warning btn-sm btn-action" onclick="editItem(${item.id})">Edit</button>
+          <button class="btn btn-danger btn-sm btn-action" onclick="deleteItem(${item.id})">Delete</button>
+        </td>
+      `;
+    } else if (currentManagementView === 'orders') {
+      row.innerHTML = `
+        <td>${item.id}</td>
+        <td>${item.destination}</td>
+        <td>${item.weight} kg</td>
+        <td>₹${item.revenue}</td>
+        <td>
+          <button class="btn btn-warning btn-sm btn-action" onclick="editItem(${item.id})">Edit</button>
+          <button class="btn btn-danger btn-sm btn-action" onclick="deleteItem(${item.id})">Delete</button>
+        </td>
+      `;
+    }
+    tableBody.appendChild(row);
+  });
+}
+
+async function editItem(id) {
+  const r = await fetchAuth(`/api/${currentManagementView}/${id}`);
+  if (!r.ok) {
+    alert("Failed to fetch item for editing.");
+    return;
+  }
+  const item = await r.json();
+  
+  if (currentManagementView === 'drivers') {
+    document.getElementById('driverId').value = item.id;
+    document.getElementById('driverName').value = item.name;
+    document.getElementById('driverCapacity').value = item.capacity;
+  } else if (currentManagementView === 'routes') {
+    document.getElementById('routeId').value = item.id;
+    document.getElementById('routeOrigin').value = item.origin;
+    document.getElementById('routeDestination').value = item.destination;
+    document.getElementById('routeDistance').value = item.distance;
+  } else if (currentManagementView === 'orders') {
+    document.getElementById('orderId').value = item.id;
+    document.getElementById('orderDestination').value = item.destination;
+    document.getElementById('orderWeight').value = item.weight;
+    document.getElementById('orderRevenue').value = item.revenue;
+  }
+}
+
+async function deleteItem(id) {
+  if (confirm(`Are you sure you want to delete item with ID: ${id}?`)) {
+    const r = await fetchAuth(`/api/${currentManagementView}/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      loadManagementData();
+    } else {
+      alert("Failed to delete item.");
+    }
+  }
+}
+
+document.getElementById('driverForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const driverId = document.getElementById('driverId').value;
+  const payload = {
+    name: document.getElementById('driverName').value,
+    capacity: parseInt(document.getElementById('driverCapacity').value)
+  };
+  const method = driverId ? 'PUT' : 'POST';
+  const url = driverId ? `/api/drivers/${driverId}` : '/api/drivers';
+  await submitForm(url, method, payload, 'driverForm');
+});
+
+document.getElementById('routeForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const routeId = document.getElementById('routeId').value;
+  const payload = {
+    origin: document.getElementById('routeOrigin').value,
+    destination: document.getElementById('routeDestination').value,
+    distance: parseFloat(document.getElementById('routeDistance').value)
+  };
+  const method = routeId ? 'PUT' : 'POST';
+  const url = routeId ? `/api/routes/${routeId}` : '/api/routes';
+  await submitForm(url, method, payload, 'routeForm');
+});
+
+document.getElementById('orderForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const orderId = document.getElementById('orderId').value;
+  const payload = {
+    destination: document.getElementById('orderDestination').value,
+    weight: parseInt(document.getElementById('orderWeight').value),
+    revenue: parseFloat(document.getElementById('orderRevenue').value)
+  };
+  const method = orderId ? 'PUT' : 'POST';
+  const url = orderId ? `/api/orders/${orderId}` : '/api/orders';
+  await submitForm(url, method, payload, 'orderForm');
+});
+
+async function submitForm(url, method, payload, formId) {
+  const r = await fetchAuth(url, { method: method, body: JSON.stringify(payload) });
+  if (r.ok) {
+    loadManagementData();
+    document.getElementById(formId).reset();
+    if (formId === 'driverForm') document.getElementById('driverId').value = '';
+    if (formId === 'routeForm') document.getElementById('routeId').value = '';
+    if (formId === 'orderForm') document.getElementById('orderId').value = '';
+  } else {
+    alert("Failed to save item.");
+  }
+}
+
+// Init
+window.onload = function() {
+  if (getToken()) {
+    welcomeMsg.textContent = "Welcome, " + localStorage.getItem("username");
+    showView("dashboardView");
+  } else {
+    showView("loginView");
+  }
+};
+</script>
+</body>
+</html>
